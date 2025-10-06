@@ -1,0 +1,311 @@
+---
+title: "assessment 4"
+author: "Khoa Huynh"
+date: "2025-09-23"
+output:
+   pdf_document:
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Question 1
+###Download the whole set of coding DNA sequences
+
+
+```{r}
+library("R.utils")
+
+URL="https://ftp.ensemblgenomes.ebi.ac.uk/pub/bacteria/release-62/fasta/bacteria_57_collection/streptacidiphilus_jiangxiensis_gca_900109465/cds/Streptacidiphilus_jiangxiensis_gca_900109465.IMG-taxon_2675903135_annotated_assembly.cds.all.fa.gz"
+download.file(URL,destfile="Streptacidiphilus jiangxiensis_cds.fa.gz")
+#gunzip("Streptacidiphilus jiangxiensis_cds.fa.gz")
+
+
+list.files()
+```
+
+```{r}
+library("R.utils")
+
+URL="http://ftp.ensemblgenomes.org/pub/bacteria/release-53/fasta/bacteria_0_collection/escherichia_coli_str_k_12_substr_mg1655_gca_000005845/cds/Escherichia_coli_str_k_12_substr_mg1655_gca_000005845.ASM584v2.cds.all.fa.gz"
+download.file(URL,destfile="ecoli_cds.fa.gz")
+#gunzip("ecoli_cds.fa.gz")
+list.files()
+```
+```{r}
+library("seqinr")
+```
+
+
+
+
+
+
+```{r}
+
+# read file FASTA
+ecoli_cds <- seqinr::read.fasta(file = "ecoli_cds.fa")
+strept_cds <- seqinr::read.fasta(file = "Streptacidiphilus jiangxiensis_cds.fa")
+
+# Counting quatity of CDS
+num_ecoli <- length(ecoli_cds)
+num_strept <- length(strept_cds)
+
+# Creating the result table
+cds_table <- data.frame(
+  Organism = c("E. coli", "S. jiangxiensis"),
+  Number_of_CDS = c(num_ecoli, num_strept)
+)
+
+
+print(cds_table)
+
+```
+## Question 2
+#How much coding DNA is there in total for these two organisms? Present this in the form of a table. Describe any differences between the two organisms.
+
+
+```{r}
+# Calculate the total length of coding DNA sequences
+
+total_ecoli <- sum(sapply(ecoli_cds, length))
+total_strept <- sum(sapply(strept_cds, length))
+
+# Create a result table
+length_table <- data.frame(
+  Organism = c("E. coli", "Streptacidiphilus jiangxiensis"),
+  Total_Coding_DNA_Length = c(total_ecoli, total_strept)
+)
+
+# Display the result
+print(length_table)
+
+```
+## Question 3
+##Calculate the length of all coding sequences in these two organisms. Make a boxplot of coding sequence length in these organisms. What is the mean and median coding sequence length of these two organisms? Describe any differences between the two organisms.
+```{r}
+# Calculate CDS lengths
+ecoli_lengths <- sapply(ecoli_cds, length)
+strept_lengths <- sapply(strept_cds, length)
+# Boxplot
+boxplot(ecoli_lengths, strept_lengths,
+        names = c("Escherichia coli", "Streptacidiphilus jiangxiensis"),
+        main = "Coding Sequence Length Distribution",
+        xlab = "Organism",
+        ylab = "Length (bp)")
+# Calculate mean and median
+mean_ecoli <- mean(ecoli_lengths)
+median_ecoli <- median(ecoli_lengths)
+mean_strept <- mean(strept_lengths)
+median_strept <- median(strept_lengths)
+# Create summary table
+summary_table <- data.frame(
+  Organism = c("E. coli", "S. jiangxiensis"),
+  Mean_CDS_Length = c(mean_ecoli, mean_strept),
+  Median_CDS_Length = c(median_ecoli, median_strept)
+)
+
+# Display results
+print(summary_table)
+
+```
+
+
+
+## Question 4
+#Calculate the frequency of DNA bases in the total coding sequences for both organisms. Perform the same calculation for the total protein sequence. Create bar plots for nucleotide and amino acid frequency. Describe any differences between the two organisms.
+```{r}
+# Load required package
+library(seqinr)
+
+# Define amino acid alphabet
+aa <- c("A", "R", "N", "D", "C", "Q", "E", "G", "H", "I", "L", "K", "M", "F", "P", "S", "T", "W", "Y", "V")
+
+### --- E. coli DNA composition ---
+ecoli_dna <- unlist(ecoli_cds)
+ecoli_dna_composition <- count(ecoli_dna, 1)
+ecoli_dna_proportion <- ecoli_dna_composition / sum(ecoli_dna_composition)
+
+barplot(ecoli_dna_proportion,
+        xlab = "Nucleotides",
+        ylab = "Proportion",
+        main = "E. coli CDS Composition")
+grid()
+
+### S. jiangxiensis DNA composition
+Sjiangxiensis_dna <- unlist(strept_cds)
+Sjiangxiensis_dna_composition <- count(Sjiangxiensis_dna, 1)
+Sjiangxiensis_dna_proportion <- Sjiangxiensis_dna_composition / sum(Sjiangxiensis_dna_composition)
+
+barplot(Sjiangxiensis_dna_proportion,
+        xlab = "Nucleotides",
+        ylab = "Proportion",
+        main = "S. jiangxiensis CDS Composition")
+grid()
+
+###  Translate CDS to protein sequences 
+ecoli_prot <- lapply(ecoli_cds, translate)
+Sjiangxiensis_prot <- lapply(strept_cds, translate)
+
+###  E. coli amino acid composition
+ecoli_aa <- unlist(ecoli_prot)
+ecoli_aa_composition <- count(ecoli_aa, wordsize = 1, alphabet = aa)
+ecoli_aa_proportion <- ecoli_aa_composition / sum(ecoli_aa_composition)
+
+barplot(ecoli_aa_proportion,
+        xlab = "Amino Acids",
+        ylab = "Proportion",
+        main = "E. coli Amino Acid Composition")
+grid()
+
+###  S. jiangxiensis amino acid composition 
+Sjiangxiensis_aa <- unlist(Sjiangxiensis_prot)
+Sjiangxiensis_aa_composition <- count(Sjiangxiensis_aa, wordsize = 1, alphabet = aa)
+Sjiangxiensis_aa_proportion <- Sjiangxiensis_aa_composition / sum(Sjiangxiensis_aa_composition)
+
+barplot(Sjiangxiensis_aa_proportion,
+        xlab = "Amino Acids",
+        ylab = "Proportion",
+        main = "S. jiangxiensis Amino Acid Composition")
+grid()
+
+
+```
+## Question 5
+#Create a codon usage table and quantify the codon usage bias among all coding sequences. Describe any differences between the two organisms with respect to their codon usage bias. Provide charts to support your observations.
+
+```{r}
+# Load required package
+library(seqinr)
+
+###  Count codons for each organism 
+ecoli_codons <- count(unlist(ecoli_cds), wordsize = 3)
+strept_codons <- count(unlist(strept_cds), wordsize = 3)
+
+### Calculate total codons 
+ecoli_total <- sum(ecoli_codons)
+strept_total <- sum(strept_codons)
+
+### Calculate RSCU (Relative Synonymous Codon Usage) 
+strept_rscu <- strept_codons / mean(strept_codons)
+ecoli_rscu <- ecoli_codons / mean(ecoli_codons)
+
+###  Create codon usage table
+codon_usage_table <- data.frame(
+  Codon = names(ecoli_codons),
+  E_coli_Count = as.numeric(ecoli_codons),
+  S_jiangxiensis_Count = as.numeric(strept_codons),
+  E_coli_RSCU = round(ecoli_rscu, 2),
+  S_jiangxiensis_RSCU = round(strept_rscu, 2)
+)
+
+print(codon_usage_table)
+
+### Plot RSCU values
+par(mfrow = c(2, 1)) 
+
+barplot(ecoli_rscu,
+        main = "E. coli Codon Usage Bias (RSCU)",
+        xlab = "Codons",
+        ylab = "RSCU",
+        las = 2,
+        col = "steelblue",
+        cex.names = 0.7)
+
+grid()
+
+barplot(strept_rscu,
+        main = "S. jiangxiensis Codon Usage Bias (RSCU)",
+        xlab = "Codons",
+        ylab = "RSCU",
+        las = 2,
+        col = "darkorange",
+        cex.names = 0.7)
+
+grid()
+
+```
+
+
+## Question 6
+#In the organism of interest, identify 10 protein sequence k-mers of length 3-5 which are the most over- and under-represented k-mers in your organism of interest. Are these k-mers also over- and under-represented in E. coli to a similar extent? Provide plots to support your observations. Why do you think these sequences are present at different levels in the genomes of these organisms?
+```{r}
+# Load required package
+library(seqinr)
+
+###  Unlist protein sequences 
+strept_aa <- unlist(Sjiangxiensis_prot)
+ecoli_aa <- unlist(ecoli_prot)
+
+### Function to count k-mers 
+count_kmers <- function(seq, k) {
+  kmers <- sapply(1:(length(seq) - k + 1), function(i) paste(seq[i:(i + k - 1)], collapse = ""))
+  table(kmers)
+}
+
+### Count k-mers for k = 3 to 5 
+strept_k3 <- count_kmers(strept_aa, 3)
+strept_k4 <- count_kmers(strept_aa, 4)
+strept_k5 <- count_kmers(strept_aa, 5)
+
+ecoli_k3 <- count_kmers(ecoli_aa, 3)
+ecoli_k4 <- count_kmers(ecoli_aa, 4)
+ecoli_k5 <- count_kmers(ecoli_aa, 5)
+
+### Normalize to frequency
+normalize <- function(tbl) round(tbl / sum(tbl), 6)
+
+strept_k3_freq <- normalize(strept_k3)
+ecoli_k3_freq <- normalize(ecoli_k3)
+
+### Identify top 10 over- and under-represented k-mers in S. jiangxiensis
+sorted_strept <- sort(strept_k3_freq, decreasing = TRUE)
+top10_over <- head(sorted_strept, 10)
+top10_under <- tail(sorted_strept, 10)
+
+### Compare with E. coli 
+compare_df <- data.frame(
+  Kmer = names(top10_over),
+  Sjiangxiensis_Freq = as.numeric(top10_over),
+  Ecoli_Freq = as.numeric(ecoli_k3_freq[names(top10_over)])
+)
+
+compare_df_under <- data.frame(
+  Kmer = names(top10_under),
+  Sjiangxiensis_Freq = as.numeric(top10_under),
+  Ecoli_Freq = as.numeric(ecoli_k3_freq[names(top10_under)])
+)
+
+###  Plot over-represented k-mers 
+barplot(t(as.matrix(compare_df[,2:3])),
+        beside = TRUE,
+        names.arg = compare_df$Kmer,
+        col = c("darkorange", "steelblue"),
+        legend.text = c("S. jiangxiensis", "E. coli"),
+        main = "Top 10 Over-represented 3-mers",
+        xlab = "K-mer",
+        ylab = "Frequency")
+
+grid()
+
+###  Plot under-represented k-mers 
+barplot(t(as.matrix(compare_df_under[,2:3])),
+        beside = TRUE,
+        names.arg = compare_df_under$Kmer,
+        col = c("darkorange", "steelblue"),
+        legend.text = c("S. jiangxiensis", "E. coli"),
+        main = "Top 10 Under-represented 3-mers",
+        xlab = "K-mer",
+        ylab = "Frequency")
+
+grid()
+
+```
+```{r}
+
+```
+
+
